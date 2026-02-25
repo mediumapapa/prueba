@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Salarios - Teletrabajo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #60a5fa;
+            --accent-secondary: #a78bfa;
+            --border-color: #475569;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.625rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header .icon {
+            font-size: 1.25rem;
+        }
+
+        .card-toggle {
+            transition: transform 0.3s ease;
+        }
+
+        .card.collapsed .card-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .card-body {
+            padding: 1.25rem;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+
+        .card.collapsed .card-body {
+            max-height: 0;
+            padding: 0 1.25rem;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-label .tooltip {
+            margin-left: 0.25rem;
+            color: var(--text-secondary);
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .input-group input[type="number"] {
+            flex: 1;
+        }
+
+        .input-group-addon {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .chart-tab {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-tab.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .heatmap-container {
+            display: grid;
+            gap: 2px;
+            margin-top: 1rem;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .heatmap-gradient {
+            width: 150px;
+            height: 12px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ef4444);
+            border-radius: 6px;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--accent-primary);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--accent-success);
+        }
+
+        .regression-output {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .p-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .p-value.significant {
+            color: var(--accent-success);
+        }
+
+        .p-value.not-significant {
+            color: var(--accent-danger);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .slider-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input[type="number"] {
+                width: 100%;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .sample-data-btn {
+            margin-top: 1rem;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">💼</div>
+                <h1>SalarySim Remote</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="loadSampleData()">
+                    📊 Cargar Datos de Ejemplo
+                </button>
+                <div class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                    🌓
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Alerta inicial -->
+        <div id="initialAlert" class="alert alert-info">
+            <span>ℹ️</span>
+            <span>Carga un archivo CSV con datos de salarios o usa el botón "Cargar Datos de Ejemplo" para comenzar. El archivo debe contener columnas como: job_title, salary_in_usd, remote_ratio, experience_level.</span>
+        </div>
+
+        <!-- Sección de carga de datos -->
+        <div class="card" id="uploadCard">
+            <div class="card-header" onclick="toggleCard('uploadCard')">
+                <h3><span class="icon">📁</span> Carga de Datos</h3>
+                <span class="card-toggle">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="file-upload" onclick="document.getElementById('csvFile').click()">
+                    <input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload(event)">
+                    <div class="file-upload-icon">📂</div>
+                    <div class="file-upload-text">
+                        <strong>Haz clic para cargar un archivo CSV</strong><br>
+                        o arrastra y suelta aquí
+                    </div>
+                </div>
+                <div id="fileInfo" class="hidden" style="margin-top: 1rem; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                    <strong>Archivo cargado:</strong> <span id="fileName"></span> (<span id="rowCount"></span> filas)
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles de simulación -->
+        <div class="grid grid-3">
+            <div class="card" id="simulationCard">
+                <div class="card-header" onclick="toggleCard('simulationCard')">
+                    <h3><span class="icon">🎮</span> Controles de Simulación</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Prima Remota (%)
+                            <span class="tooltip" data-tip="Porcentaje de aumento/reducción del salario basado en teletrabajo">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="remoteBonus" min="-50" max="50" value="0" oninput="updateSimulation()">
+                            <input type="number" id="remoteBonusValue" min="-50" max="50" value="0" onchange="syncSlider('remoteBonus', this.value)">
+                            <span>%</span>
+                        </div>
+                        <div class="progress-bar" style="margin-top: 0.5rem;">
+                            <div class="progress-fill" id="remoteBonusBar" style="width: 50%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Multiplicador por Perfil
+                            <span class="tooltip" data-tip="Factor de ajuste según el nivel de experiencia">ℹ️</span>
+                        </label>
+                        <div class="input-group">
+                            <select id="experienceLevel" onchange="updateSimulation()">
+                                <option value="all">Todos los niveles</option>
+                                <option value="EN">Entry Level (EN)</option>
+                                <option value="MI">Mid Level (MI)</option>
+                                <option value="SE">Senior (SE)</option>
+                                <option value="EX">Executive (EX)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Multiplicador EN
+                            <span class="tooltip" data-tip="Factor para nivel Entry">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="multEN" min="0.5" max="2" step="0.1" value="1" oninput="updateSimulation()">
+                            <input type="number" id="multENValue" min="0.5" max="2" step="0.1" value="1" onchange="syncSlider('multEN', this.value)">
+                            <span>x</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Multiplicador MI
+                            <span class="tooltip" data-tip="Factor para nivel Mid">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="multMI" min="0.5" max="2" step="0.1" value="1" oninput="updateSimulation()">
+                            <input type="number" id="multMIValue" min="0.5" max="2" step="0.1" value="1" onchange="syncSlider('multMI', this.value)">
+                            <span>x</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Multiplicador SE
+                            <span class="tooltip" data-tip="Factor para nivel Senior">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="multSE" min="0.5" max="2" step="0.1" value="1" oninput="updateSimulation()">
+                            <input type="number" id="multSEValue" min="0.5" max="2" step="0.1" value="1" onchange="syncSlider('multSE', this.value)">
+                            <span>x</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Multiplicador EX
+                            <span class="tooltip" data-tip="Factor para nivel Executive">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="multEX" min="0.5" max="2" step="0.1" value="1" oninput="updateSimulation()">
+                            <input type="number" id="multEXValue" min="0.5" max="2" step="0.1" value="1" onchange="syncSlider('multEX', this.value)">
+                            <span>x</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Inflación/Deflación (%)
+                            <span class="tooltip" data-tip="Ajuste general del salario base">ℹ️</span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="inflation" min="-30" max="30" value="0" oninput="updateSimulation()">
+                            <input type="number" id="inflationValue" min="-30" max="30" value="0" onchange="syncSlider('inflation', this.value)">
+                            <span>%</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success" id="simulationFeedback" style="margin-top: 1rem;">
+                        <span>💡</span>
+                        <span id="feedbackText">Ajusta los controles para ver el impacto en tiempo real</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas en tiempo real -->
+            <div class="card" id="statsCard">
+                <div class="card-header" onclick="toggleCard('statsCard')">
+                    <h3><span class="icon">📈</span> Estadísticas en Tiempo Real</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgSalary">$0</div>
+                            <div class="stat-label">Salario Promedio</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="medianSalary">$0</div>
+                            <div class="stat-label">Mediana</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stdSalary">$0</div>
+                            <div class="stat-label">Desv. Estándar</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalRecords">0</div>
+                            <div class="stat-label">Registros</div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 1rem 0 0.5rem; font-size: 0.875rem;">Análisis de Regresión (OLS)</h4>
+                    <div class="regression-output" id="regressionOutput">
+                        Cargue datos para ver los resultados de regresión...
+                    </div>
+
+                    <h4 style="margin: 1rem 0 0.5rem; font-size: 0.875rem;">ANOVA - Remote Ratio vs Salario</h4>
+                    <div class="regression-output" id="anovaOutput">
+                        Cargue datos para ver los resultados ANOVA...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de Impacto -->
+            <div class="card" id="impactCard">
+                <div class="card-header" onclick="toggleCard('impactCard')">
+                    <h3><span class="icon">🎯</span> Impacto de la Simulación</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="impactAvg">0%</div>
+                            <div class="stat-label">Cambio Promedio</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="impactTotal">$0</div>
+                            <div class="stat-label">Impacto Total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="remoteWorkers">0</div>
+                            <div class="stat-label">Trabajadores Remotos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="hybridWorkers">0</div>
+                            <div class="stat-label">Trabajadores Híbridos</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1rem;">
+                        <label class="form-label">Distribución por Nivel de Experiencia</label>
+                        <div id="experienceDistribution"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-2">
+            <div class="card" id="chartCard1">
+                <div class="card-header" onclick="toggleCard('chartCard1')">
+                    <h3><span class="icon">📊</span> Salario vs Ratio de Teletrabajo</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" onclick="changeChartType('scatter')">Dispersión</button>
+                        <button class="chart-tab" onclick="changeChartType('bar')">Barras</button>
+                        <button class="chart-tab" onclick="changeChartType('line')">Líneas</button>
+                        <button class="chart-tab" onclick="changeChartType('box')">Boxplot</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="heatmapCard">
+                <div class="card-header" onclick="toggleCard('heatmapCard')">
+                    <h3><span class="icon">🔥</span> Mapa de Calor - Puesto × Remote Ratio</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" id="heatmapContainer">
+                        <canvas id="heatmapChart"></canvas>
+                    </div>
+                    <div class="heatmap-legend">
+                        <span>Bajo</span>
+                        <div class="heatmap-gradient"></div>
+                        <span>Alto</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos adicionales -->
+        <div class="grid grid-2">
+            <div class="card" id="residualsCard">
+                <div class="card-header" onclick="toggleCard('residualsCard')">
+                    <h3><span class="icon">📉</span> Diagnóstico del Modelo - Residuos</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="residualsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="distributionCard">
+                <div class="card-header" onclick="toggleCard('distributionCard')">
+                    <h3><span class="icon">📊</span> Distribución de Salarios</h3>
+                    <span class="card-toggle">▼</span>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de datos -->
+        <div class="card" id="tableCard">
+            <div class="card-header" onclick="toggleCard('tableCard')">
+                <h3><span class="icon">🗂️</span> Vista Previa de Datos</h3>
+                <span class="card-toggle">▼</span>
+            </div>
+            <div class="card-body">
+                <div class="export-buttons">
+                    <button class="btn btn-primary btn-sm" onclick="exportToCSV()">
+                        📥 Exportar CSV Original
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="exportSimulatedCSV()">
+                        📥 Exportar CSV Simulado
+                    </button>
+                    <button class="btn btn-sm" onclick="exportToJSON()">
+                        📥 Exportar JSON
+                    </button>
+                </div>
+                <div class="table-container" style="margin-top: 1rem;">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Puesto</th>
+                                <th>Nivel</th>
+                                <th>Salario Original</th>
+                                <th>Salario Simulado</th>
+                                <th>Cambio %</th>
+                                <th>Remote Ratio</th>
+                                <th>Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-secondary);">
+                                    Cargue datos para ver la tabla
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Variables globales
+        let originalData = [];
+        let simulatedData = [];
+        let charts = {};
+        let currentChartType = 'scatter';
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            updateTheme();
+        });
+
+        // Tema oscuro/claro
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateChartsTheme();
+        }
+
+        function updateTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        // Colapsar/expandir tarjetas
+        function toggleCard(cardId) {
+            const card = document.getElementById(cardId);
+            card.classList.toggle('collapsed');
+        }
+
+        // Sincronizar slider con input numérico
+        function syncSlider(sliderId, value) {
+            document.getElementById(sliderId).value = value;
+            document.getElementById(sliderId + 'Value').value = value;
+            updateSimulation();
+        }
+
+        // Actualizar barras de progreso
+        function updateProgressBars() {
+            const remoteBonus = parseFloat(document.getElementById('remoteBonus').value);
+            const bar = document.getElementById('remoteBonusBar');
+            const normalizedValue = ((remoteBonus + 50) / 100) * 100;
+            bar.style.width = normalizedValue + '%';
+            
+            if (remoteBonus < 0) {
+                bar.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+            } else if (remoteBonus > 0) {
+                bar.style.background = 'linear-gradient(90deg, #10b981, #3b82f6)';
+            } else {
+                bar.style.background = 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))';
+            }
+        }
+
+        // Cargar datos de ejemplo
+        function loadSampleData() {
+            const sampleData = generateSampleData();
+            processData(sampleData);
+            document.getElementById('initialAlert').classList.add('hidden');
+            document.getElementById('fileInfo').classList.remove('hidden');
+            document.getElementById('fileName').textContent = 'Datos de Ejemplo';
+            document.getElementById('rowCount').textContent = sampleData.length;
+        }
+
+        // Generar datos de ejemplo
+        function generateSampleData() {
+            const jobTitles = [
+                'Data Scientist', 'Data Engineer', 'Data Analyst', 'ML Engineer',
+                'Data Architect', 'BI Analyst', 'Research Scientist', 'AI Engineer',
+                'Analytics Engineer', 'Data Science Manager', 'ML Ops Engineer'
+            ];
+            const experienceLevels = ['EN', 'MI', 'SE', 'EX'];
+            const locations = ['US', 'GB', 'CA', 'DE', 'IN', 'FR', 'ES', 'BR'];
+            
+            const data = [];
+            
+            for (let i = 0; i < 500; i++) {
+                const expLevel = experienceLevels[Math.floor(Math.random() * experienceLevels.length)];
+                const baseSalary = {
+                    'EN': 60000 + Math.random() * 40000,
+                    'MI': 90000 + Math.random() * 50000,
+                    'SE': 130000 + Math.random() * 70000,
+                    'EX': 180000 + Math.random() * 120000
+                }[expLevel];
+                
+                const remoteRatio = Math.floor(Math.random() * 101);
+                const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+                
+                data.push({
+                    work_year: 2023,
+                    experience_level: expLevel,
+                    employment_type: 'FT',
+                    job_title: jobTitle,
+                    salary: Math.round(baseSalary),
+                    salary_currency: 'USD',
+                    salary_in_usd: Math.round(baseSalary),
+                    employee_residence: locations[Math.floor(Math.random() * locations.length)],
+                    remote_ratio: remoteRatio,
+                    company_location: 'US',
+                    company_size: ['S', 'M', 'L'][Math.floor(Math.random() * 3)]
+                });
+            }
+            
+            return data;
+        }
+
+        // Manejar carga de archivo
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    processData(results.data);
+                    document.getElementById('initialAlert').classList.add('hidden');
+                    document.getElementById('fileInfo').classList.remove('hidden');
+                    document.getElementById('fileName').textContent = file.name;
+                    document.getElementById('rowCount').textContent = results.data.length;
+                },
+                error: function(error) {
+                    alert('Error al cargar el archivo: ' + error.message);
+                }
+            });
+        }
+
+        // Procesar datos
+        function processData(data) {
+            originalData = data.filter(row => row.salary_in_usd && row.job_title);
+            simulatedData = JSON.parse(JSON.stringify(originalData));
+            updateSimulation();
+        }
+
+        // Actualizar simulación
+        function updateSimulation() {
+            if (originalData.length === 0) return;
+
+            updateProgressBars();
+
+            const remoteBonus = parseFloat(document.getElementById('remoteBonus').value) / 100;
+            const multEN = parseFloat(document.getElementById('multEN').value);
+            const multMI = parseFloat(document.getElementById('multMI').value);
+            const multSE = parseFloat(document.getElementById('multSE').value);
+            const multEX = parseFloat(document.getElementById('multEX').value);
+            const inflation = parseFloat(document.getElementById('inflation').value) / 100;
+            const selectedLevel = document.getElementById('experienceLevel').value;
+
+            const multipliers = { 'EN': multEN, 'MI': multMI, 'SE': multSE, 'EX': multEX };
+
+            simulatedData = originalData.map(row => {
+                const newRow = { ...row };
+                const originalSalary = row.salary_in_usd;
+                const expLevel = row.experience_level;
+                const remoteRatio = row.remote_ratio / 100;
+
+                // Aplicar multiplicador de experiencia
+                let salaryMultiplier = multipliers[expLevel] || 1;
+
+                // Aplicar prima remota (proporcional al remote ratio)
+                const remoteAdjustment = 1 + (remoteBonus * remoteRatio);
+
+                // Aplicar inflación/deflación
+                const inflationAdjustment = 1 + inflation;
+
+                // Calcular nuevo salario
+                let newSalary = originalSalary * salaryMultiplier * remoteAdjustment * inflationAdjustment;
+                
+                newRow.salary_in_usd_simulated = Math.round(newSalary);
+                newRow.salary_change_pct = ((newSalary - originalSalary) / originalSalary * 100).toFixed(2);
+                newRow.salary_original = originalSalary;
+
+                return newRow;
+            });
+
+            // Filtrar por nivel de experiencia si se seleccionó uno específico
+            const filteredData = selectedLevel === 'all' 
+                ? simulatedData 
+                : simulatedData.filter(row => row.experience_level === selectedLevel);
+
+            updateStats(filteredData);
+            updateCharts(filteredData);
+            updateTable(filteredData);
+            updateFeedback(remoteBonus, inflation);
+        }
+
+        // Actualizar feedback
+        function updateFeedback(remoteBonus, inflation) {
+            const feedbackEl = document.getElementById('feedbackText');
+            const messages = [];
+
+            if (remoteBonus !== 0) {
+                const direction = remoteBonus > 0 ? 'aumento' : 'descuento';
+                messages.push(`Prima remota: ${direction} del ${Math.abs(remoteBonus * 100).toFixed(0)}%`);
+            }
+
+            if (inflation !== 0) {
+                const direction = inflation > 0 ? 'inflación' : 'deflación';
+                messages.push(`${direction} del ${Math.abs(inflation * 100).toFixed(0)}% aplicada`);
+            }
+
+            if (messages.length === 0) {
+                feedbackEl.textContent = 'Sin ajustes aplicados - mostrando datos originales';
+            } else {
+                feedbackEl.textContent = messages.join(' | ');
+            }
+        }
+
+        // Calcular estadísticas
+        function calculateStats(data) {
+            const salaries = data.map(row => row.salary_in_usd_simulated || row.salary_in_usd);
+            const n = salaries.length;
+            
+            if (n === 0) return { mean: 0, median: 0, std: 0, min: 0, max: 0 };
+
+            const sum = salaries.reduce((a, b) => a + b, 0);
+            const mean = sum / n;
+            const sorted = [...salaries].sort((a, b) => a - b);
+            const median = n % 2 === 0 
+                ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
+                : sorted[Math.floor(n/2)];
+            
+            const variance = salaries.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / n;
+            const std = Math.sqrt(variance);
+
+            return {
+                mean: Math.round(mean),
+                median: Math.round(median),
+                std: Math.round(std),
+                min: Math.min(...salaries),
+                max: Math.max(...salaries)
+            };
+        }
+
+        // Actualizar estadísticas
+        function updateStats(data) {
+            const stats = calculateStats(data);
+            const originalStats = calculateStats(originalData);
+
+            document.getElementById('avgSalary').textContent = '$' + stats.mean.toLocaleString();
+            document.getElementById('medianSalary').textContent = '$' + stats.median.toLocaleString();
+            document.getElementById('stdSalary').textContent = '$' + stats.std.toLocaleString();
+            document.getElementById('totalRecords').textContent = data.length.toLocaleString();
+
+            // Impacto
+            const impactAvg = ((stats.mean - originalStats.mean) / originalStats.mean * 100).toFixed(1);
+            const impactTotal = (stats.mean * data.length - originalStats.mean * originalData.length).toLocaleString();
+            
+            document.getElementById('impactAvg').textContent = (impactAvg > 0 ? '+' : '') + impactAvg + '%';
+            document.getElementById('impactTotal').textContent = '$' + impactTotal;
+
+            // Contar trabajadores remotos e híbridos
+            const remoteWorkers = data.filter(row => row.remote_ratio === 100).length;
+            const hybridWorkers = data.filter(row => row.remote_ratio > 0 && row.remote_ratio < 100).length;
+            document.getElementById('remoteWorkers').textContent = remoteWorkers.toLocaleString();
+            document.getElementById('hybridWorkers').textContent = hybridWorkers.toLocaleString();
+
+            // Distribución por experiencia
+            updateExperienceDistribution(data);
+
+            // Regresión y ANOVA
+            performRegression(data);
+            performANOVA(data);
+        }
+
+        // Actualizar distribución por experiencia
+        function updateExperienceDistribution(data) {
+            const levels = { 'EN': 0, 'MI': 0, 'SE': 0, 'EX': 0 };
+            data.forEach(row => {
+                if (levels[row.experience_level] !== undefined) {
+                    levels[row.experience_level]++;
+                }
+            });
+
+            const container = document.getElementById('experienceDistribution');
+            const total = data.length;
+            
+            const labels = { 'EN': 'Entry', 'MI': 'Mid', 'SE': 'Senior', 'EX': 'Executive' };
+            const colors = { 'EN': '#3b82f6', 'MI': '#8b5cf6', 'SE': '#10b981', 'EX': '#f59e0b' };
+
+            let html = '';
+            for (const [level, count] of Object.entries(levels)) {
+                const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+                html += `
+                    <div style="margin-bottom: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                            <span>${labels[level]}</span>
+                            <span>${count} (${pct}%)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${pct}%; background: ${colors[level]};"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // Regresión OLS simple
+        function performRegression(data) {
+            const x = data.map(row => row.remote_ratio);
+            const y = data.map(row => row.salary_in_usd_simulated || row.salary_in_usd);
+            const n = x.length;
+
+            if (n < 2) {
+                document.getElementById('regressionOutput').textContent = 'Se necesitan más datos para la regresión';
+                return;
+            }
+
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+            const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Calcular R²
+            const yMean = sumY / n;
+            const ssTotal = y.reduce((acc, yi) => acc + Math.pow(yi - yMean, 2), 0);
+            const ssResidual = y.reduce((acc, yi, i) => acc + Math.pow(yi - (slope * x[i] + intercept), 2), 0);
+            const rSquared = 1 - (ssResidual / ssTotal);
+
+            // Calcular error estándar y t-statistic
+            const mse = ssResidual / (n - 2);
+            const seSlope = Math.sqrt(mse / (sumX2 - sumX * sumX / n));
+            const tStat = slope / seSlope;
+
+            // Valor p aproximado (distribución t)
+            const pValue = 2 * (1 - tCDF(Math.abs(tStat), n - 2));
+
+            const output = `
+Regresión Lineal Simple (OLS)
+============================
+Variable dependiente: Salario (USD)
+Variable independiente: Remote Ratio (%)
+
+Coeficientes:
+  Intercepto:    $${intercept.toFixed(2)}
+  Pendiente:     $${slope.toFixed(2)} por % remoto
+
+Estadísticos:
+  R²:            ${rSquared.toFixed(4)}
+  Error estándar: ${seSlope.toFixed(2)}
+  t-statistic:   ${tStat.toFixed(4)}
+  p-value:       ${pValue.toFixed(6)} ${pValue < 0.05 ? '✓ Significativo' : '✗ No significativo'}
+
+Interpretación:
+${slope > 0 ? '↑' : '↓'} Cada 1% adicional de teletrabajo se asocia con ${slope > 0 ? 'un aumento' : 'una disminución'} de $${Math.abs(slope).toFixed(2)} en el salario
+            `;
+
+            document.getElementById('regressionOutput').textContent = output;
+        }
+
+        // Función de distribución t acumulada (aproximación)
+        function tCDF(t, df) {
+            const x = df / (df + t * t);
+            const a = df / 2;
+            const b = 0.5;
+            return 1 - 0.5 * betaInc(x, a, b);
+        }
+
+        // Función beta incompleta (aproximación simple)
+        function betaInc(x, a, b) {
+            return Math.pow(x, a) * Math.pow(1 - x, b) / (a * betaFunc(a, b));
+        }
+
+        function betaFunc(a, b) {
+            return Math.exp(logGamma(a) + logGamma(b) - logGamma(a + b));
+        }
+
+        function logGamma(z) {
+            const g = 7;
+            const C = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+                      771.32342877765313, -176.61502916214059, 12.507343278686905,
+                      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+            if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
+            z -= 1;
+            let x = C[0];
+            for (let i = 1; i < g + 2; i++) x += C[i] / (z + i);
+            const t = z + g + 0.5;
+            return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+        }
+
+        // ANOVA
+        function performANOVA(data) {
+            // Agrupar por categorías de remote ratio
+            const groups = {
+                'Presencial (0%)': [],
+                'Híbrido (1-50%)': [],
+                'Mayormente remoto (51-99%)': [],
+                'Totalmente remoto (100%)': []
+            };
+
+            data.forEach(row => {
+                const salary = row.salary_in_usd_simulated || row.salary_in_usd;
+                const ratio = row.remote_ratio;
+                
+                if (ratio === 0) groups['Presencial (0%)'].push(salary);
+                else if (ratio <= 50) groups['Híbrido (1-50%)'].push(salary);
+                else if (ratio < 100) groups['Mayormente remoto (51-99%)'].push(salary);
+                else groups['Totalmente remoto (100%)'].push(salary);
+            });
+
+            const groupNames = Object.keys(groups).filter(k => groups[k].length > 0);
+            const k = groupNames.length;
+            const n = data.length;
+
+            if (k < 2) {
+                document.getElementById('anovaOutput').textContent = 'Se necesitan al menos 2 grupos para ANOVA';
+                return;
+            }
+
+            // Calcular medias
+            const groupMeans = {};
+            const groupSizes = {};
+            let grandSum = 0;
+
+            groupNames.forEach(name => {
+                const group = groups[name];
+                groupSizes[name] = group.length;
+                groupMeans[name] = group.reduce((a, b) => a + b, 0) / group.length;
+                grandSum += group.reduce((a, b) => a + b, 0);
+            });
+
+            const grandMean = grandSum / n;
+
+            // Suma de cuadrados
+            let ssBetween = 0;
+            let ssWithin = 0;
+
+            groupNames.forEach(name => {
+                ssBetween += groupSizes[name] * Math.pow(groupMeans[name] - grandMean, 2);
+                ssWithin += groups[name].reduce((acc, val) => acc + Math.pow(val - groupMeans[name], 2), 0);
+            });
+
+            const ssTotal = ssBetween + ssWithin;
+            const dfBetween = k - 1;
+            const dfWithin = n - k;
+            const msBetween = ssBetween / dfBetween;
+            const msWithin = ssWithin / dfWithin;
+            const fStat = msBetween / msWithin;
+
+            // Valor p aproximado (usando distribución F)
+            const pValue = 1 - fCDF(fStat, dfBetween, dfWithin);
+
+            const output = `
+ANOVA - Salario por Categoría de Teletrabajo
+=============================================
+Fuente          SC          gl      MC          F           p-valor
+-----------------------------------------------------------------
+Entre grupos    ${ssBetween.toFixed(0).padStart(10)} ${dfBetween.toString().padStart(4)} ${msBetween.toFixed(0).padStart(10)} ${fStat.toFixed(4).padStart(10)} ${pValue.toFixed(6)}
+Dentro grupos   ${ssWithin.toFixed(0).padStart(10)} ${dfWithin.toString().padStart(4)} ${msWithin.toFixed(0).padStart(10)}
+-----------------------------------------------------------------
+Total           ${ssTotal.toFixed(0).padStart(10)} ${(n-1).toString().padStart(4)}
+
+Resultado: ${pValue < 0.05 ? '✓ Diferencias significativas entre grupos' : '✗ No hay diferencias significativas'}
+
+Medias por grupo:
+${groupNames.map(name => `  ${name}: $${groupMeans[name].toFixed(0)} (n=${groupSizes[name]})`).join('\n')}
+            `;
+
+            document.getElementById('anovaOutput').textContent = output;
+        }
+
+        // Función de distribución F acumulada (aproximación)
+        function fCDF(f, d1, d2) {
+            const x = (d1 * f) / (d1 * f + d2);
+            return betaInc(x, d1 / 2, d2 / 2);
+        }
+
+
+        // Inicializar gráficos
+        function initCharts() {
+            const ctx1 = document.getElementById('mainChart').getContext('2d');
+            const ctx2 = document.getElementById('heatmapChart').getContext('2d');
+            const ctx3 = document.getElementById('residualsChart').getContext('2d');
+            const ctx4 = document.getElementById('distributionChart').getContext('2d');
+
+            charts.main = new Chart(ctx1, {
+                type: 'scatter',
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Salario: $${context.parsed.y.toLocaleString()} | Remote: ${context.parsed.x}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Remote Ratio (%)' },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: { display: true, text: 'Salario (USD)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.heatmap = new Chart(ctx2, {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Salario promedio: $${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Puesto de trabajo' } },
+                        y: {
+                            title: { display: true, text: 'Salario Promedio (USD)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.residuals = new Chart(ctx3, {
+                type: 'scatter',
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Residuos vs Valores Ajustados' }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Valores Ajustados' } },
+                        y: { title: { display: true, text: 'Residuos' } }
+                    }
+                }
+            });
+
+            charts.distribution = new Chart(ctx4, {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Distribución de Salarios' }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Rango Salarial' } },
+                        y: { title: { display: true, text: 'Frecuencia' } }
+                    }
+                }
+            });
+        }
+
+        // Cambiar tipo de gráfico
+        function changeChartType(type) {
+            currentChartType = type;
+            
+            // Actualizar tabs
+            document.querySelectorAll('.chart-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            updateCharts(simulatedData);
+        }
+
+        // Actualizar gráficos
+        function updateCharts(data) {
+            if (data.length === 0) return;
+
+            updateMainChart(data);
+            updateHeatmap(data);
+            updateResidualsChart(data);
+            updateDistributionChart(data);
+        }
+
+        // Actualizar gráfico principal
+        function updateMainChart(data) {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#f8fafc' : '#1e293b';
+
+            const colors = {
+                'EN': '#3b82f6',
+                'MI': '#8b5cf6',
+                'SE': '#10b981',
+                'EX': '#f59e0b'
+            };
+
+            const labels = { 'EN': 'Entry', 'MI': 'Mid', 'SE': 'Senior', 'EX': 'Executive' };
+
+            if (currentChartType === 'scatter') {
+                const datasets = Object.keys(colors).map(level => {
+                    const levelData = data.filter(row => row.experience_level === level);
+                    return {
+                        label: labels[level],
+                        data: levelData.map(row => ({
+                            x: row.remote_ratio,
+                            y: row.salary_in_usd_simulated || row.salary_in_usd
+                        })),
+                        backgroundColor: colors[level],
+                        borderColor: colors[level],
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    };
+                });
+
+                charts.main.config.type = 'scatter';
+                charts.main.data = { datasets };
+            } else if (currentChartType === 'bar') {
+                // Agrupar por remote ratio
+                const bins = { '0%': [], '1-25%': [], '26-50%': [], '51-75%': [], '76-99%': [], '100%': [] };
+                data.forEach(row => {
+                    const ratio = row.remote_ratio;
+                    const salary = row.salary_in_usd_simulated || row.salary_in_usd;
+                    if (ratio === 0) bins['0%'].push(salary);
+                    else if (ratio <= 25) bins['1-25%'].push(salary);
+                    else if (ratio <= 50) bins['26-50%'].push(salary);
+                    else if (ratio <= 75) bins['51-75%'].push(salary);
+                    else if (ratio < 100) bins['76-99%'].push(salary);
+                    else bins['100%'].push(salary);
+                });
+
+                const labels = Object.keys(bins).filter(k => bins[k].length > 0);
+                const values = labels.map(k => bins[k].reduce((a, b) => a + b, 0) / bins[k].length);
+
+                charts.main.config.type = 'bar';
+                charts.main.data = {
+                    labels,
+                    datasets: [{
+                        label: 'Salario Promedio',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1
+                    }]
+                };
+            } else if (currentChartType === 'line') {
+                // Agrupar por remote ratio y calcular promedio
+                const grouped = {};
+                data.forEach(row => {
+                    const ratio = row.remote_ratio;
+                    const salary = row.salary_in_usd_simulated || row.salary_in_usd;
+                    if (!grouped[ratio]) grouped[ratio] = [];
+                    grouped[ratio].push(salary);
+                });
+
+                const sortedRatios = Object.keys(grouped).sort((a, b) => a - b);
+                const avgSalaries = sortedRatios.map(ratio => 
+                    grouped[ratio].reduce((a, b) => a + b, 0) / grouped[ratio].length
+                );
+
+                charts.main.config.type = 'line';
+                charts.main.data = {
+                    labels: sortedRatios,
+                    datasets: [{
+                        label: 'Salario Promedio',
+                        data: avgSalaries,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                };
+            } else if (currentChartType === 'box') {
+                // Crear boxplot simplificado usando barras de error
+                const bins = { '0%': [], '1-33%': [], '34-66%': [], '67-99%': [], '100%': [] };
+                data.forEach(row => {
+                    const ratio = row.remote_ratio;
+                    const salary = row.salary_in_usd_simulated || row.salary_in_usd;
+                    if (ratio === 0) bins['0%'].push(salary);
+                    else if (ratio <= 33) bins['1-33%'].push(salary);
+                    else if (ratio <= 66) bins['34-66%'].push(salary);
+                    else if (ratio < 100) bins['67-99%'].push(salary);
+                    else bins['100%'].push(salary);
+                });
+
+                const labels = Object.keys(bins).filter(k => bins[k].length > 0);
+                const stats = labels.map(k => {
+                    const sorted = [...bins[k]].sort((a, b) => a - b);
+                    const n = sorted.length;
+                    return {
+                        min: sorted[0],
+                        q1: sorted[Math.floor(n * 0.25)],
+                        median: sorted[Math.floor(n * 0.5)],
+                        q3: sorted[Math.floor(n * 0.75)],
+                        max: sorted[n - 1]
+                    };
+                });
+
+                charts.main.config.type = 'bar';
+                charts.main.data = {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Mediana',
+                            data: stats.map(s => s.median),
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                        },
+                        {
+                            label: 'Q1-Q3 Range',
+                            data: stats.map(s => s.q3 - s.q1),
+                            backgroundColor: 'rgba(139, 92, 246, 0.3)'
+                        }
+                    ]
+                };
+            }
+
+            charts.main.options.scales.x.title.color = textColor;
+            charts.main.options.scales.y.title.color = textColor;
+            charts.main.options.scales.x.ticks = { color: textColor };
+            charts.main.options.scales.y.ticks = { color: textColor };
+            charts.main.update();
+        }
+
+        // Actualizar mapa de calor
+        function updateHeatmap(data) {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            // Obtener top 10 puestos más comunes
+            const jobCounts = {};
+            data.forEach(row => {
+                jobCounts[row.job_title] = (jobCounts[row.job_title] || 0) + 1;
+            });
+            
+            const topJobs = Object.entries(jobCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([job]) => job);
+
+            // Calcular salario promedio por puesto
+            const jobSalaries = {};
+            topJobs.forEach(job => {
+                const salaries = data
+                    .filter(row => row.job_title === job)
+                    .map(row => row.salary_in_usd_simulated || row.salary_in_usd);
+                jobSalaries[job] = salaries.reduce((a, b) => a + b, 0) / salaries.length;
+            });
+
+            const labels = topJobs.map(j => j.length > 20 ? j.substring(0, 20) + '...' : j);
+            const values = topJobs.map(j => jobSalaries[j]);
+
+            // Crear gradiente de colores
+            const maxVal = Math.max(...values);
+            const minVal = Math.min(...values);
+            const backgroundColors = values.map(v => {
+                const ratio = (v - minVal) / (maxVal - minVal);
+                const r = Math.round(59 + (239 - 59) * ratio);
+                const g = Math.round(130 + (68 - 130) * ratio);
+                const b = Math.round(246 + (68 - 246) * ratio);
+                return `rgb(${r}, ${g}, ${b})`;
+            });
+
+            charts.heatmap.data = {
+                labels,
+                datasets: [{
+                    label: 'Salario Promedio',
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderColor: isDark ? '#475569' : '#e2e8f0',
+                    borderWidth: 1
+                }]
+            };
+
+            charts.heatmap.update();
+        }
+
+        // Actualizar gráfico de residuos
+        function updateResidualsChart(data) {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            // Calcular regresión
+            const x = data.map(row => row.remote_ratio);
+            const y = data.map(row => row.salary_in_usd_simulated || row.salary_in_usd);
+            const n = x.length;
+            
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+            const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Calcular residuos
+            const residuals = y.map((yi, i) => ({
+                x: slope * x[i] + intercept,
+                y: yi - (slope * x[i] + intercept)
+            }));
+
+            charts.residuals.data = {
+                datasets: [{
+                    label: 'Residuos',
+                    data: residuals,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    pointRadius: 3
+                }, {
+                    label: 'Línea de referencia',
+                    data: [{ x: Math.min(...residuals.map(r => r.x)), y: 0 }, 
+                           { x: Math.max(...residuals.map(r => r.x)), y: 0 }],
+                    type: 'line',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    pointRadius: 0
+                }]
+            };
+
+            charts.residuals.options.scales.x.title.color = isDark ? '#f8fafc' : '#1e293b';
+            charts.residuals.options.scales.y.title.color = isDark ? '#f8fafc' : '#1e293b';
+            charts.residuals.options.scales.x.ticks = { color: isDark ? '#f8fafc' : '#1e293b' };
+            charts.residuals.options.scales.y.ticks = { color: isDark ? '#f8fafc' : '#1e293b' };
+            charts.residuals.update();
+        }
+
+        // Actualizar gráfico de distribución
+        function updateDistributionChart(data) {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            const salaries = data.map(row => row.salary_in_usd_simulated || row.salary_in_usd);
+            const min = Math.min(...salaries);
+            const max = Math.max(...salaries);
+            const binCount = 20;
+            const binSize = (max - min) / binCount;
+
+            const bins = new Array(binCount).fill(0);
+            const labels = [];
+
+            salaries.forEach(salary => {
+                const binIndex = Math.min(Math.floor((salary - min) / binSize), binCount - 1);
+                bins[binIndex]++;
+            });
+
+            for (let i = 0; i < binCount; i++) {
+                const start = Math.round(min + i * binSize);
+                const end = Math.round(min + (i + 1) * binSize);
+                labels.push(`$${(start/1000).toFixed(0)}k-$${(end/1000).toFixed(0)}k`);
+            }
+
+            charts.distribution.data = {
+                labels,
+                datasets: [{
+                    label: 'Frecuencia',
+                    data: bins,
+                    backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1
+                }]
+            };
+
+            charts.distribution.options.scales.x.title.color = isDark ? '#f8fafc' : '#1e293b';
+            charts.distribution.options.scales.y.title.color = isDark ? '#f8fafc' : '#1e293b';
+            charts.distribution.options.scales.x.ticks = { color: isDark ? '#f8fafc' : '#1e293b', maxRotation: 45 };
+            charts.distribution.options.scales.y.ticks = { color: isDark ? '#f8fafc' : '#1e293b' };
+            charts.distribution.update();
+        }
+
+        // Actualizar tema de gráficos
+        function updateChartsTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#f8fafc' : '#1e293b';
+
+            Object.values(charts).forEach(chart => {
+                if (chart.options.scales.x) {
+                    chart.options.scales.x.title.color = textColor;
+                    chart.options.scales.x.ticks = { color: textColor };
+                }
+                if (chart.options.scales.y) {
+                    chart.options.scales.y.title.color = textColor;
+                    chart.options.scales.y.ticks = { color: textColor };
+                }
+                chart.update();
+            });
+        }
+
+        // Actualizar tabla
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            const displayData = data.slice(0, 100); // Mostrar solo las primeras 100 filas
+
+            if (displayData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-secondary);">
+                            No hay datos para mostrar
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = displayData.map(row => {
+                const change = parseFloat(row.salary_change_pct);
+                const changeClass = change > 0 ? 'badge-success' : change < 0 ? 'badge-danger' : '';
+                const changeSign = change > 0 ? '+' : '';
+                
+                return `
+                    <tr>
+                        <td>${row.job_title}</td>
+                        <td><span class="badge ${row.experience_level === 'EX' ? 'badge-warning' : 'badge-success'}">${row.experience_level}</span></td>
+                        <td>$${row.salary_original?.toLocaleString() || row.salary_in_usd?.toLocaleString()}</td>
+                        <td>$${row.salary_in_usd_simulated?.toLocaleString()}</td>
+                        <td><span class="badge ${changeClass}">${changeSign}${change}%</span></td>
+                        <td>${row.remote_ratio}%</td>
+                        <td>${row.company_location}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Exportar a CSV original
+        function exportToCSV() {
+            if (originalData.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            const csv = Papa.unparse(originalData);
+            downloadFile(csv, 'salarios_originales.csv', 'text/csv');
+        }
+
+        // Exportar a CSV simulado
+        function exportSimulatedCSV() {
+            if (simulatedData.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            const exportData = simulatedData.map(row => ({
+                ...row,
+                salary_original: row.salary_original,
+                salary_simulated: row.salary_in_usd_simulated,
+                cambio_porcentaje: row.salary_change_pct + '%'
+            }));
+
+            const csv = Papa.unparse(exportData);
+            downloadFile(csv, 'salarios_simulados.csv', 'text/csv');
+        }
+
+        // Exportar a JSON
+        function exportToJSON() {
+            if (simulatedData.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            const json = JSON.stringify(simulatedData, null, 2);
+            downloadFile(json, 'salarios_simulados.json', 'application/json');
+        }
+
+        // Descargar archivo
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Inicializar
+        updateTheme();
+    </script>
+</body>
+</html>
